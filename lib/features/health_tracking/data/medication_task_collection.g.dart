@@ -17,30 +17,60 @@ const MedicationTaskSchema = CollectionSchema(
   name: r'MedicationTask',
   id: 1646092438396845836,
   properties: {
-    r'dosage': PropertySchema(
+    r'deletionReason': PropertySchema(
       id: 0,
+      name: r'deletionReason',
+      type: IsarType.string,
+    ),
+    r'dosage': PropertySchema(
+      id: 1,
       name: r'dosage',
       type: IsarType.string,
     ),
+    r'durationDays': PropertySchema(
+      id: 2,
+      name: r'durationDays',
+      type: IsarType.long,
+    ),
+    r'frequency': PropertySchema(
+      id: 3,
+      name: r'frequency',
+      type: IsarType.long,
+    ),
+    r'isDeleted': PropertySchema(
+      id: 4,
+      name: r'isDeleted',
+      type: IsarType.bool,
+    ),
     r'isSynced': PropertySchema(
-      id: 1,
+      id: 5,
       name: r'isSynced',
       type: IsarType.bool,
     ),
     r'isTaken': PropertySchema(
-      id: 2,
+      id: 6,
       name: r'isTaken',
       type: IsarType.bool,
     ),
     r'medicationName': PropertySchema(
-      id: 3,
+      id: 7,
       name: r'medicationName',
       type: IsarType.string,
     ),
     r'scheduledTime': PropertySchema(
-      id: 4,
+      id: 8,
       name: r'scheduledTime',
       type: IsarType.dateTime,
+    ),
+    r'startDate': PropertySchema(
+      id: 9,
+      name: r'startDate',
+      type: IsarType.dateTime,
+    ),
+    r'userId': PropertySchema(
+      id: 10,
+      name: r'userId',
+      type: IsarType.string,
     )
   },
   estimateSize: _medicationTaskEstimateSize,
@@ -49,6 +79,19 @@ const MedicationTaskSchema = CollectionSchema(
   deserializeProp: _medicationTaskDeserializeProp,
   idName: r'id',
   indexes: {
+    r'userId': IndexSchema(
+      id: -2005826577402374815,
+      name: r'userId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'userId',
+          type: IndexType.value,
+          caseSensitive: true,
+        )
+      ],
+    ),
     r'medicationName': IndexSchema(
       id: -3870955775737281770,
       name: r'medicationName',
@@ -75,6 +118,19 @@ const MedicationTaskSchema = CollectionSchema(
         )
       ],
     ),
+    r'startDate': IndexSchema(
+      id: 7723980484494730382,
+      name: r'startDate',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'startDate',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
+    ),
     r'isSynced': IndexSchema(
       id: -39763503327887510,
       name: r'isSynced',
@@ -83,6 +139,19 @@ const MedicationTaskSchema = CollectionSchema(
       properties: [
         IndexPropertySchema(
           name: r'isSynced',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
+    ),
+    r'isDeleted': IndexSchema(
+      id: -786475870904832312,
+      name: r'isDeleted',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'isDeleted',
           type: IndexType.value,
           caseSensitive: false,
         )
@@ -103,8 +172,15 @@ int _medicationTaskEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.deletionReason;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.dosage.length * 3;
   bytesCount += 3 + object.medicationName.length * 3;
+  bytesCount += 3 + object.userId.length * 3;
   return bytesCount;
 }
 
@@ -114,11 +190,17 @@ void _medicationTaskSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.dosage);
-  writer.writeBool(offsets[1], object.isSynced);
-  writer.writeBool(offsets[2], object.isTaken);
-  writer.writeString(offsets[3], object.medicationName);
-  writer.writeDateTime(offsets[4], object.scheduledTime);
+  writer.writeString(offsets[0], object.deletionReason);
+  writer.writeString(offsets[1], object.dosage);
+  writer.writeLong(offsets[2], object.durationDays);
+  writer.writeLong(offsets[3], object.frequency);
+  writer.writeBool(offsets[4], object.isDeleted);
+  writer.writeBool(offsets[5], object.isSynced);
+  writer.writeBool(offsets[6], object.isTaken);
+  writer.writeString(offsets[7], object.medicationName);
+  writer.writeDateTime(offsets[8], object.scheduledTime);
+  writer.writeDateTime(offsets[9], object.startDate);
+  writer.writeString(offsets[10], object.userId);
 }
 
 MedicationTask _medicationTaskDeserialize(
@@ -128,12 +210,18 @@ MedicationTask _medicationTaskDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = MedicationTask();
-  object.dosage = reader.readString(offsets[0]);
+  object.deletionReason = reader.readStringOrNull(offsets[0]);
+  object.dosage = reader.readString(offsets[1]);
+  object.durationDays = reader.readLong(offsets[2]);
+  object.frequency = reader.readLong(offsets[3]);
   object.id = id;
-  object.isSynced = reader.readBool(offsets[1]);
-  object.isTaken = reader.readBool(offsets[2]);
-  object.medicationName = reader.readString(offsets[3]);
-  object.scheduledTime = reader.readDateTime(offsets[4]);
+  object.isDeleted = reader.readBool(offsets[4]);
+  object.isSynced = reader.readBool(offsets[5]);
+  object.isTaken = reader.readBool(offsets[6]);
+  object.medicationName = reader.readString(offsets[7]);
+  object.scheduledTime = reader.readDateTime(offsets[8]);
+  object.startDate = reader.readDateTime(offsets[9]);
+  object.userId = reader.readString(offsets[10]);
   return object;
 }
 
@@ -145,15 +233,27 @@ P _medicationTaskDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 1:
-      return (reader.readBool(offset)) as P;
-    case 2:
-      return (reader.readBool(offset)) as P;
-    case 3:
       return (reader.readString(offset)) as P;
+    case 2:
+      return (reader.readLong(offset)) as P;
+    case 3:
+      return (reader.readLong(offset)) as P;
     case 4:
+      return (reader.readBool(offset)) as P;
+    case 5:
+      return (reader.readBool(offset)) as P;
+    case 6:
+      return (reader.readBool(offset)) as P;
+    case 7:
+      return (reader.readString(offset)) as P;
+    case 8:
       return (reader.readDateTime(offset)) as P;
+    case 9:
+      return (reader.readDateTime(offset)) as P;
+    case 10:
+      return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -180,6 +280,14 @@ extension MedicationTaskQueryWhereSort
     });
   }
 
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhere> anyUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'userId'),
+      );
+    });
+  }
+
   QueryBuilder<MedicationTask, MedicationTask, QAfterWhere>
       anyMedicationName() {
     return QueryBuilder.apply(this, (query) {
@@ -197,10 +305,26 @@ extension MedicationTaskQueryWhereSort
     });
   }
 
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhere> anyStartDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'startDate'),
+      );
+    });
+  }
+
   QueryBuilder<MedicationTask, MedicationTask, QAfterWhere> anyIsSynced() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'isSynced'),
+      );
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhere> anyIsDeleted() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'isDeleted'),
       );
     });
   }
@@ -274,6 +398,146 @@ extension MedicationTaskQueryWhere
         upper: upperId,
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause> userIdEqualTo(
+      String userId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'userId',
+        value: [userId],
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      userIdNotEqualTo(String userId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [],
+              upper: [userId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [userId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [userId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [],
+              upper: [userId],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      userIdGreaterThan(
+    String userId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'userId',
+        lower: [userId],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      userIdLessThan(
+    String userId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'userId',
+        lower: [],
+        upper: [userId],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause> userIdBetween(
+    String lowerUserId,
+    String upperUserId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'userId',
+        lower: [lowerUserId],
+        includeLower: includeLower,
+        upper: [upperUserId],
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      userIdStartsWith(String UserIdPrefix) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'userId',
+        lower: [UserIdPrefix],
+        upper: ['$UserIdPrefix\u{FFFFF}'],
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      userIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'userId',
+        value: [''],
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      userIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.lessThan(
+              indexName: r'userId',
+              upper: [''],
+            ))
+            .addWhereClause(IndexWhereClause.greaterThan(
+              indexName: r'userId',
+              lower: [''],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.greaterThan(
+              indexName: r'userId',
+              lower: [''],
+            ))
+            .addWhereClause(IndexWhereClause.lessThan(
+              indexName: r'userId',
+              upper: [''],
+            ));
+      }
     });
   }
 
@@ -512,6 +776,99 @@ extension MedicationTaskQueryWhere
   }
 
   QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      startDateEqualTo(DateTime startDate) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'startDate',
+        value: [startDate],
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      startDateNotEqualTo(DateTime startDate) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'startDate',
+              lower: [],
+              upper: [startDate],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'startDate',
+              lower: [startDate],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'startDate',
+              lower: [startDate],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'startDate',
+              lower: [],
+              upper: [startDate],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      startDateGreaterThan(
+    DateTime startDate, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'startDate',
+        lower: [startDate],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      startDateLessThan(
+    DateTime startDate, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'startDate',
+        lower: [],
+        upper: [startDate],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      startDateBetween(
+    DateTime lowerStartDate,
+    DateTime upperStartDate, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'startDate',
+        lower: [lowerStartDate],
+        includeLower: includeLower,
+        upper: [upperStartDate],
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
       isSyncedEqualTo(bool isSynced) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
@@ -555,10 +912,209 @@ extension MedicationTaskQueryWhere
       }
     });
   }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      isDeletedEqualTo(bool isDeleted) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'isDeleted',
+        value: [isDeleted],
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterWhereClause>
+      isDeletedNotEqualTo(bool isDeleted) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isDeleted',
+              lower: [],
+              upper: [isDeleted],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isDeleted',
+              lower: [isDeleted],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isDeleted',
+              lower: [isDeleted],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isDeleted',
+              lower: [],
+              upper: [isDeleted],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
 }
 
 extension MedicationTaskQueryFilter
     on QueryBuilder<MedicationTask, MedicationTask, QFilterCondition> {
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'deletionReason',
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'deletionReason',
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deletionReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'deletionReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'deletionReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'deletionReason',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'deletionReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'deletionReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'deletionReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'deletionReason',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deletionReason',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      deletionReasonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'deletionReason',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
       dosageEqualTo(
     String value, {
@@ -695,6 +1251,118 @@ extension MedicationTaskQueryFilter
     });
   }
 
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      durationDaysEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'durationDays',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      durationDaysGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'durationDays',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      durationDaysLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'durationDays',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      durationDaysBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'durationDays',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      frequencyEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'frequency',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      frequencyGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'frequency',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      frequencyLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'frequency',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      frequencyBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'frequency',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition> idEqualTo(
       Id value) {
     return QueryBuilder.apply(this, (query) {
@@ -746,6 +1414,16 @@ extension MedicationTaskQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      isDeletedEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isDeleted',
+        value: value,
       ));
     });
   }
@@ -961,6 +1639,198 @@ extension MedicationTaskQueryFilter
       ));
     });
   }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      startDateEqualTo(DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'startDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      startDateGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'startDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      startDateLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'startDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      startDateBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'startDate',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      userIdEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      userIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      userIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      userIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'userId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      userIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      userIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      userIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      userIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'userId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      userIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'userId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterFilterCondition>
+      userIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'userId',
+        value: '',
+      ));
+    });
+  }
 }
 
 extension MedicationTaskQueryObject
@@ -971,6 +1841,20 @@ extension MedicationTaskQueryLinks
 
 extension MedicationTaskQuerySortBy
     on QueryBuilder<MedicationTask, MedicationTask, QSortBy> {
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      sortByDeletionReason() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletionReason', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      sortByDeletionReasonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletionReason', Sort.desc);
+    });
+  }
+
   QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> sortByDosage() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'dosage', Sort.asc);
@@ -981,6 +1865,46 @@ extension MedicationTaskQuerySortBy
       sortByDosageDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'dosage', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      sortByDurationDays() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'durationDays', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      sortByDurationDaysDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'durationDays', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> sortByFrequency() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'frequency', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      sortByFrequencyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'frequency', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> sortByIsDeleted() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDeleted', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      sortByIsDeletedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDeleted', Sort.desc);
     });
   }
 
@@ -1037,10 +1961,50 @@ extension MedicationTaskQuerySortBy
       return query.addSortBy(r'scheduledTime', Sort.desc);
     });
   }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> sortByStartDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'startDate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      sortByStartDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'startDate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> sortByUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      sortByUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.desc);
+    });
+  }
 }
 
 extension MedicationTaskQuerySortThenBy
     on QueryBuilder<MedicationTask, MedicationTask, QSortThenBy> {
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      thenByDeletionReason() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletionReason', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      thenByDeletionReasonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletionReason', Sort.desc);
+    });
+  }
+
   QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> thenByDosage() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'dosage', Sort.asc);
@@ -1054,6 +2018,33 @@ extension MedicationTaskQuerySortThenBy
     });
   }
 
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      thenByDurationDays() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'durationDays', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      thenByDurationDaysDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'durationDays', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> thenByFrequency() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'frequency', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      thenByFrequencyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'frequency', Sort.desc);
+    });
+  }
+
   QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1063,6 +2054,19 @@ extension MedicationTaskQuerySortThenBy
   QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> thenByIsDeleted() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDeleted', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      thenByIsDeletedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDeleted', Sort.desc);
     });
   }
 
@@ -1119,14 +2123,69 @@ extension MedicationTaskQuerySortThenBy
       return query.addSortBy(r'scheduledTime', Sort.desc);
     });
   }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> thenByStartDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'startDate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      thenByStartDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'startDate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy> thenByUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QAfterSortBy>
+      thenByUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.desc);
+    });
+  }
 }
 
 extension MedicationTaskQueryWhereDistinct
     on QueryBuilder<MedicationTask, MedicationTask, QDistinct> {
+  QueryBuilder<MedicationTask, MedicationTask, QDistinct>
+      distinctByDeletionReason({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'deletionReason',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<MedicationTask, MedicationTask, QDistinct> distinctByDosage(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'dosage', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QDistinct>
+      distinctByDurationDays() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'durationDays');
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QDistinct>
+      distinctByFrequency() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'frequency');
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QDistinct>
+      distinctByIsDeleted() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isDeleted');
     });
   }
 
@@ -1156,6 +2215,20 @@ extension MedicationTaskQueryWhereDistinct
       return query.addDistinctBy(r'scheduledTime');
     });
   }
+
+  QueryBuilder<MedicationTask, MedicationTask, QDistinct>
+      distinctByStartDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'startDate');
+    });
+  }
+
+  QueryBuilder<MedicationTask, MedicationTask, QDistinct> distinctByUserId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'userId', caseSensitive: caseSensitive);
+    });
+  }
 }
 
 extension MedicationTaskQueryProperty
@@ -1166,9 +2239,34 @@ extension MedicationTaskQueryProperty
     });
   }
 
+  QueryBuilder<MedicationTask, String?, QQueryOperations>
+      deletionReasonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'deletionReason');
+    });
+  }
+
   QueryBuilder<MedicationTask, String, QQueryOperations> dosageProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'dosage');
+    });
+  }
+
+  QueryBuilder<MedicationTask, int, QQueryOperations> durationDaysProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'durationDays');
+    });
+  }
+
+  QueryBuilder<MedicationTask, int, QQueryOperations> frequencyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'frequency');
+    });
+  }
+
+  QueryBuilder<MedicationTask, bool, QQueryOperations> isDeletedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isDeleted');
     });
   }
 
@@ -1195,6 +2293,18 @@ extension MedicationTaskQueryProperty
       scheduledTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'scheduledTime');
+    });
+  }
+
+  QueryBuilder<MedicationTask, DateTime, QQueryOperations> startDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'startDate');
+    });
+  }
+
+  QueryBuilder<MedicationTask, String, QQueryOperations> userIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'userId');
     });
   }
 }

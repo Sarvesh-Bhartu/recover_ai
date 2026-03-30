@@ -14,30 +14,39 @@ class ProgressRing extends StatelessWidget {
       duration: const Duration(milliseconds: 1500),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
-        return CustomPaint(
-          size: const Size(180, 180),
-          painter: _RingPainter(progress: value),
-          child: SizedBox(
-            width: 180,
-            height: 180,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${(value * 100).toInt()}%',
-                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                          color: AppTheme.textPrimary,
-                        ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final size = constraints.maxWidth;
+            return CustomPaint(
+              size: Size(size, size),
+              painter: _RingPainter(progress: value),
+              child: SizedBox(
+                width: size,
+                height: size,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${(value * 100).toStringAsFixed(1)}%',
+                        style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                              color: AppTheme.textPrimary,
+                              fontSize: size * 0.22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      Text(
+                        'Recovered',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontSize: size * 0.08,
+                            ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    'Recovered',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );

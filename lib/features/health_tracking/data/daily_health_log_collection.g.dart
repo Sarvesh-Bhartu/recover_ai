@@ -37,10 +37,25 @@ const HealthLogSchema = CollectionSchema(
       name: r'painLevel',
       type: IsarType.long,
     ),
-    r'timestamp': PropertySchema(
+    r'symptoms': PropertySchema(
       id: 4,
+      name: r'symptoms',
+      type: IsarType.stringList,
+    ),
+    r'temperature': PropertySchema(
+      id: 5,
+      name: r'temperature',
+      type: IsarType.double,
+    ),
+    r'timestamp': PropertySchema(
+      id: 6,
       name: r'timestamp',
       type: IsarType.dateTime,
+    ),
+    r'userId': PropertySchema(
+      id: 7,
+      name: r'userId',
+      type: IsarType.string,
     )
   },
   estimateSize: _healthLogEstimateSize,
@@ -49,6 +64,19 @@ const HealthLogSchema = CollectionSchema(
   deserializeProp: _healthLogDeserializeProp,
   idName: r'id',
   indexes: {
+    r'userId': IndexSchema(
+      id: -2005826577402374815,
+      name: r'userId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'userId',
+          type: IndexType.value,
+          caseSensitive: true,
+        )
+      ],
+    ),
     r'timestamp': IndexSchema(
       id: 1852253767416892198,
       name: r'timestamp',
@@ -91,6 +119,14 @@ int _healthLogEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.aiJournalEntry.length * 3;
+  bytesCount += 3 + object.symptoms.length * 3;
+  {
+    for (var i = 0; i < object.symptoms.length; i++) {
+      final value = object.symptoms[i];
+      bytesCount += value.length * 3;
+    }
+  }
+  bytesCount += 3 + object.userId.length * 3;
   return bytesCount;
 }
 
@@ -104,7 +140,10 @@ void _healthLogSerialize(
   writer.writeBool(offsets[1], object.isSynced);
   writer.writeLong(offsets[2], object.moodLevel);
   writer.writeLong(offsets[3], object.painLevel);
-  writer.writeDateTime(offsets[4], object.timestamp);
+  writer.writeStringList(offsets[4], object.symptoms);
+  writer.writeDouble(offsets[5], object.temperature);
+  writer.writeDateTime(offsets[6], object.timestamp);
+  writer.writeString(offsets[7], object.userId);
 }
 
 HealthLog _healthLogDeserialize(
@@ -119,7 +158,10 @@ HealthLog _healthLogDeserialize(
   object.isSynced = reader.readBool(offsets[1]);
   object.moodLevel = reader.readLong(offsets[2]);
   object.painLevel = reader.readLong(offsets[3]);
-  object.timestamp = reader.readDateTime(offsets[4]);
+  object.symptoms = reader.readStringList(offsets[4]) ?? [];
+  object.temperature = reader.readDoubleOrNull(offsets[5]);
+  object.timestamp = reader.readDateTime(offsets[6]);
+  object.userId = reader.readString(offsets[7]);
   return object;
 }
 
@@ -139,7 +181,13 @@ P _healthLogDeserializeProp<P>(
     case 3:
       return (reader.readLong(offset)) as P;
     case 4:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 5:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 6:
       return (reader.readDateTime(offset)) as P;
+    case 7:
+      return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -162,6 +210,14 @@ extension HealthLogQueryWhereSort
   QueryBuilder<HealthLog, HealthLog, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterWhere> anyUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'userId'),
+      );
     });
   }
 
@@ -246,6 +302,142 @@ extension HealthLogQueryWhere
         upper: upperId,
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterWhereClause> userIdEqualTo(
+      String userId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'userId',
+        value: [userId],
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterWhereClause> userIdNotEqualTo(
+      String userId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [],
+              upper: [userId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [userId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [userId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'userId',
+              lower: [],
+              upper: [userId],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterWhereClause> userIdGreaterThan(
+    String userId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'userId',
+        lower: [userId],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterWhereClause> userIdLessThan(
+    String userId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'userId',
+        lower: [],
+        upper: [userId],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterWhereClause> userIdBetween(
+    String lowerUserId,
+    String upperUserId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'userId',
+        lower: [lowerUserId],
+        includeLower: includeLower,
+        upper: [upperUserId],
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterWhereClause> userIdStartsWith(
+      String UserIdPrefix) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'userId',
+        lower: [UserIdPrefix],
+        upper: ['$UserIdPrefix\u{FFFFF}'],
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterWhereClause> userIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'userId',
+        value: [''],
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterWhereClause> userIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.lessThan(
+              indexName: r'userId',
+              upper: [''],
+            ))
+            .addWhereClause(IndexWhereClause.greaterThan(
+              indexName: r'userId',
+              lower: [''],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.greaterThan(
+              indexName: r'userId',
+              lower: [''],
+            ))
+            .addWhereClause(IndexWhereClause.lessThan(
+              indexName: r'userId',
+              upper: [''],
+            ));
+      }
     });
   }
 
@@ -694,6 +886,311 @@ extension HealthLogQueryFilter
     });
   }
 
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'symptoms',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'symptoms',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'symptoms',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'symptoms',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'symptoms',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'symptoms',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'symptoms',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'symptoms',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'symptoms',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'symptoms',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'symptoms',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> symptomsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'symptoms',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'symptoms',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'symptoms',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'symptoms',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      symptomsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'symptoms',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      temperatureIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'temperature',
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      temperatureIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'temperature',
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> temperatureEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'temperature',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition>
+      temperatureGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'temperature',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> temperatureLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'temperature',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> temperatureBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'temperature',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
   QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> timestampEqualTo(
       DateTime value) {
     return QueryBuilder.apply(this, (query) {
@@ -744,6 +1241,136 @@ extension HealthLogQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> userIdEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> userIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> userIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> userIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'userId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> userIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> userIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> userIdContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'userId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> userIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'userId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> userIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'userId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterFilterCondition> userIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'userId',
+        value: '',
       ));
     });
   }
@@ -804,6 +1431,18 @@ extension HealthLogQuerySortBy on QueryBuilder<HealthLog, HealthLog, QSortBy> {
     });
   }
 
+  QueryBuilder<HealthLog, HealthLog, QAfterSortBy> sortByTemperature() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'temperature', Sort.asc);
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterSortBy> sortByTemperatureDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'temperature', Sort.desc);
+    });
+  }
+
   QueryBuilder<HealthLog, HealthLog, QAfterSortBy> sortByTimestamp() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'timestamp', Sort.asc);
@@ -813,6 +1452,18 @@ extension HealthLogQuerySortBy on QueryBuilder<HealthLog, HealthLog, QSortBy> {
   QueryBuilder<HealthLog, HealthLog, QAfterSortBy> sortByTimestampDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'timestamp', Sort.desc);
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterSortBy> sortByUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterSortBy> sortByUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.desc);
     });
   }
 }
@@ -879,6 +1530,18 @@ extension HealthLogQuerySortThenBy
     });
   }
 
+  QueryBuilder<HealthLog, HealthLog, QAfterSortBy> thenByTemperature() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'temperature', Sort.asc);
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterSortBy> thenByTemperatureDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'temperature', Sort.desc);
+    });
+  }
+
   QueryBuilder<HealthLog, HealthLog, QAfterSortBy> thenByTimestamp() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'timestamp', Sort.asc);
@@ -888,6 +1551,18 @@ extension HealthLogQuerySortThenBy
   QueryBuilder<HealthLog, HealthLog, QAfterSortBy> thenByTimestampDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'timestamp', Sort.desc);
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterSortBy> thenByUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QAfterSortBy> thenByUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.desc);
     });
   }
 }
@@ -920,9 +1595,28 @@ extension HealthLogQueryWhereDistinct
     });
   }
 
+  QueryBuilder<HealthLog, HealthLog, QDistinct> distinctBySymptoms() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'symptoms');
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QDistinct> distinctByTemperature() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'temperature');
+    });
+  }
+
   QueryBuilder<HealthLog, HealthLog, QDistinct> distinctByTimestamp() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'timestamp');
+    });
+  }
+
+  QueryBuilder<HealthLog, HealthLog, QDistinct> distinctByUserId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'userId', caseSensitive: caseSensitive);
     });
   }
 }
@@ -959,9 +1653,27 @@ extension HealthLogQueryProperty
     });
   }
 
+  QueryBuilder<HealthLog, List<String>, QQueryOperations> symptomsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'symptoms');
+    });
+  }
+
+  QueryBuilder<HealthLog, double?, QQueryOperations> temperatureProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'temperature');
+    });
+  }
+
   QueryBuilder<HealthLog, DateTime, QQueryOperations> timestampProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'timestamp');
+    });
+  }
+
+  QueryBuilder<HealthLog, String, QQueryOperations> userIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'userId');
     });
   }
 }

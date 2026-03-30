@@ -5,9 +5,14 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/onboarding_screen.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/user/data/user_repository.dart';
-import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/dashboard/presentation/main_navigation_shell.dart';
+import '../../features/dashboard/presentation/dashboard_screen.dart';
+import '../../features/dashboard/presentation/care_team_screen.dart';
 import '../../features/copilot/presentation/copilot_chat_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/health_tracking/presentation/recovery_plan_screen.dart';
+import '../../features/health_tracking/presentation/medical_history_screen.dart';
+import 'package:recover_ai/features/health_tracking/presentation/prescription_upload_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -57,6 +62,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/',
                 builder: (context, state) => const DashboardScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'upload',
+                    builder: (context, state) => const PrescriptionUploadScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/history',
+                builder: (context, state) => const MedicalHistoryScreen(),
               ),
             ],
           ),
@@ -64,7 +83,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/plan',
-                builder: (context, state) => const Scaffold(body: Center(child: Text('Recovery Plan Placeholder'))),
+                builder: (context, state) => const RecoveryPlanScreen(),
               ),
             ],
           ),
@@ -79,8 +98,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/doctor-info',
+                builder: (context, state) => const CareTeamScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: '/profile',
-                builder: (context, state) => const Scaffold(body: Center(child: Text('Profile Placeholder'))),
+                builder: (context, state) => const ProfileScreen(),
               ),
             ],
           ),

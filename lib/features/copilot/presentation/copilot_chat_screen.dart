@@ -4,6 +4,7 @@ import 'package:recover_ai/core/theme/app_theme.dart';
 import 'package:recover_ai/features/copilot/data/ai_service.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:recover_ai/core/services/voice_service.dart';
 
 class CopilotChatScreen extends ConsumerStatefulWidget {
   const CopilotChatScreen({super.key});
@@ -22,6 +23,12 @@ class _CopilotChatScreenState extends ConsumerState<CopilotChatScreen> {
   void initState() {
     super.initState();
     _initializeBrain();
+    _initializeVoice();
+  }
+
+  Future<void> _initializeVoice() async {
+    final voiceService = ref.read(voiceServiceProvider);
+    await voiceService.initialize();
   }
 
   Future<void> _initializeBrain() async {
@@ -44,6 +51,45 @@ class _CopilotChatScreenState extends ConsumerState<CopilotChatScreen> {
     });
   }
 
+  Future<void> _toggleListening() async {
+    final voiceService = ref.read(voiceServiceProvider);
+    final aiService = ref.read(copilotServiceProvider);
+    
+    if (await voiceService.isRecording()) {
+      final path = await voiceService.stopRecording();
+      if (path != null) {
+        setState(() { _isTyping = true; });
+        try {
+          final response = await aiService.processVoiceInput(path);
+          // Synthesis for response
+          await voiceService.speak(response);
+          // Manually refresh state for history
+          setState(() { _isTyping = false; });
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Voice processing failed: $e')));
+          }
+          setState(() { _isTyping = false; });
+        }
+      }
+      setState(() {});
+      return;
+    }
+
+    final hasPerm = await voiceService.checkPermissions();
+    if (!hasPerm) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone permission required.')));
+      }
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recording...'), duration: Duration(milliseconds: 1000)));
+
+    await voiceService.startRecording();
+    if (mounted) setState(() {});
+  }
+
   Future<void> _sendMessage() async {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty) return;
@@ -55,7 +101,11 @@ class _CopilotChatScreenState extends ConsumerState<CopilotChatScreen> {
     _scrollToBottom();
 
     try {
-      final response = await aiService.chatSession.sendMessage(Content.text(text));
+      final response = await aiService.chatSession!.sendMessage(Content.text(text));
+      // Voice synthesis for the response
+      if (response.text != null && response.text!.isNotEmpty) {
+        ref.read(voiceServiceProvider).speak(response.text!);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -85,12 +135,12 @@ class _CopilotChatScreenState extends ConsumerState<CopilotChatScreen> {
     }
 
     final aiService = ref.watch(copilotServiceProvider);
-    final history = aiService.chatSession.history.toList();
+    final history = aiService.chatSession!.history.toList();
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('AI Copilot', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('AI Health Guide', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: AppTheme.surfaceColor,
         elevation: 0,
         centerTitle: true,
@@ -98,49 +148,51 @@ class _CopilotChatScreenState extends ConsumerState<CopilotChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              controller: _scrollCtrl,
-              padding: const EdgeInsets.all(16),
-              itemCount: history.length,
-              itemBuilder: (context, index) {
-                final message = history[index];
-                final isUser = message.role == 'user';
-                final part = message.parts.isNotEmpty ? message.parts.first : null;
-                final content = part is TextPart ? part.text : '';
+            child: history.isEmpty 
+              ? _buildWelcomeMessage()
+              : ListView.builder(
+                  controller: _scrollCtrl,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: history.length,
+                  itemBuilder: (context, index) {
+                    final message = history[index];
+                    final isUser = message.role == 'user';
+                    final part = message.parts.isNotEmpty ? message.parts.first : null;
+                    final content = part is TextPart ? part.text : '';
 
-                return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    padding: const EdgeInsets.all(16),
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                    decoration: BoxDecoration(
-                      color: isUser ? AppTheme.primaryColor.withOpacity(0.9) : AppTheme.surfaceColor,
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(20),
-                        topRight: const Radius.circular(20),
-                        bottomLeft: Radius.circular(isUser ? 20 : 0),
-                        bottomRight: Radius.circular(isUser ? 0 : 20),
+                    return Align(
+                      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.all(16),
+                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                        decoration: BoxDecoration(
+                          color: isUser ? AppTheme.primaryColor.withOpacity(0.9) : AppTheme.surfaceColor,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(20),
+                            topRight: const Radius.circular(20),
+                            bottomLeft: Radius.circular(isUser ? 20 : 0),
+                            bottomRight: Radius.circular(isUser ? 0 : 20),
+                          ),
+                        ),
+                        child: MarkdownBody(
+                          data: content,
+                          styleSheet: MarkdownStyleSheet(
+                            p: TextStyle(color: isUser ? AppTheme.backgroundColor : Colors.white, fontSize: 16),
+                            strong: TextStyle(color: isUser ? AppTheme.backgroundColor : AppTheme.primaryColor, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: MarkdownBody(
-                      data: content,
-                      styleSheet: MarkdownStyleSheet(
-                        p: TextStyle(color: isUser ? AppTheme.backgroundColor : Colors.white, fontSize: 16),
-                        strong: TextStyle(color: isUser ? AppTheme.backgroundColor : AppTheme.primaryColor, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
           ),
           if (_isTyping)
             const Padding(
               padding: EdgeInsets.all(16.0),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Copilot is typing...', style: TextStyle(color: AppTheme.textSecondary, fontStyle: FontStyle.italic)),
+                child: Text('Health Guide is thinking...', style: TextStyle(color: AppTheme.textSecondary, fontStyle: FontStyle.italic)),
               ),
             ),
           Container(
@@ -155,7 +207,7 @@ class _CopilotChatScreenState extends ConsumerState<CopilotChatScreen> {
                   child: TextField(
                     controller: _msgCtrl,
                     decoration: InputDecoration(
-                      hintText: 'Ask your copilot anything...',
+                      hintText: 'Ask your health guide anything...',
                       hintStyle: const TextStyle(color: Colors.white24),
                       filled: true,
                       fillColor: AppTheme.backgroundColor,
@@ -166,18 +218,68 @@ class _CopilotChatScreenState extends ConsumerState<CopilotChatScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: AppTheme.primaryColor,
-                  child: IconButton(
-                    icon: const Icon(Icons.send_rounded, color: AppTheme.backgroundColor),
-                    onPressed: _sendMessage,
-                  ),
-                )
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _msgCtrl,
+                  builder: (context, value, child) {
+                    final isEmpty = value.text.trim().isEmpty;
+                    final voiceService = ref.watch(voiceServiceProvider);
+                    
+                    return FutureBuilder<bool>(
+                      future: voiceService.isRecording(),
+                      builder: (context, snapshot) {
+                        final isRecording = snapshot.data ?? false;
+                        
+                        return CircleAvatar(
+                          radius: 24,
+                          backgroundColor: isRecording ? Colors.red : AppTheme.primaryColor,
+                          child: IconButton(
+                            icon: Icon(
+                              isEmpty ? (isRecording ? Icons.stop_rounded : Icons.mic_rounded) : Icons.send_rounded, 
+                              color: AppTheme.backgroundColor,
+                            ),
+                            onPressed: isEmpty ? _toggleListening : _sendMessage,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ],
             ),
           )
         ],
+      ),
+    );
+  }
+
+  Widget _buildWelcomeMessage() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.auto_awesome_rounded, color: AppTheme.primaryColor, size: 40),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'AI Health Guide',
+              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Hey there, this is your AI Health Companion. If you have any questions, you can ask me freely.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 16, height: 1.5),
+            ),
+          ],
+        ),
       ),
     );
   }

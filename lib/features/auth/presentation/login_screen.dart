@@ -62,13 +62,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = state is AsyncLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Recover AI')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(_isRegistering ? 'Create Account' : 'Welcome Back', style: Theme.of(context).textTheme.headlineMedium),
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFF00F2FE), Color(0xFF4FACFE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: const Column(
+                children: [
+                  Text(
+                    'Welcome to',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: -1.0,
+                    ),
+                  ),
+                  Text(
+                    'Recover AI',
+                    style: TextStyle(
+                      fontSize: 42,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: -1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 32),
             TextField(
               controller: _emailController,
@@ -87,10 +118,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             if (isLoading)
               const CircularProgressIndicator()
             else
-              ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-                child: Text(_isRegistering ? 'Register' : 'Login'),
+              Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: _submit,
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                    child: Text(_isRegistering ? 'Register' : 'Login'),
+                  ),
+                  const SizedBox(height: 24),
+                  const Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.white12)),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text("Or continue with", style: TextStyle(color: Colors.white54)),
+                      ),
+                      Expanded(child: Divider(color: Colors.white12)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Firebase Native Google Sign-In Requires Deployment')));
+                        },
+                        icon: const Icon(Icons.g_mobiledata, size: 28),
+                        label: const Text('Google'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          side: const BorderSide(color: Colors.white24),
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Firebase Phone OTP Requires SMS Billing Configuration')));
+                        },
+                        icon: const Icon(Icons.phone_iphone, size: 20),
+                        label: const Text('Phone'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          side: const BorderSide(color: Colors.white24),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             TextButton(
               onPressed: isLoading ? null : () => setState(() => _isRegistering = !_isRegistering),
