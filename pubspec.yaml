@@ -38,7 +38,8 @@ dependencies:
   go_router: ^17.1.0
   dio: ^5.9.2
   isar: ^3.1.0+1
-  isar_flutter_libs: ^3.1.0+1
+  isar_flutter_libs:
+    path: ./plugins/isar_flutter_libs
   path_provider: ^2.1.5
   firebase_core: ^4.6.0
   firebase_auth: ^6.3.0

@@ -318,7 +318,7 @@ class DashboardScreen extends ConsumerWidget {
           if (userProfile == null) return;
           
           await syncRepo.wipeFirestoreData();
-          final resetUrl = Uri.parse('http://127.0.0.1:3000/api/graph/reset/${userProfile.uid}');
+          final resetUrl = Uri.parse('https://recover-ai-zoma.onrender.com/api/graph/reset/${userProfile.uid}');
           try { await http.delete(resetUrl); } catch (e) { debugPrint('Graph Reset failed: $e'); }
           await localRepo.clearAllTasksAndLogs();
 

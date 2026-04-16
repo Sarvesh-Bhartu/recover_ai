@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final neo4jServiceProvider = Provider<Neo4jService>((ref) => Neo4jService());
 
 class Neo4jService {
-  final String _nodeBackendProxy = 'http://127.0.0.1:3000/api/graph';
+  final String _nodeBackendProxy = 'https://recover-ai-zoma.onrender.com/api/graph';
 
   Neo4jService();
 
